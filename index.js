@@ -1,4 +1,11 @@
 // Vars
+var lodash = require('lodash');
 
 // Consts
-const PLUGIN_NAME = 'gulp-dust-crawler';
+var PLUGIN_NAME = 'gulp-dust-crawler';
+
+var gulpDustCrawler = function() {
+
+};
+
+module.exports = gulpDustCrawler;

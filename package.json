@@ -26,5 +26,8 @@
     "gulpplugin",
     "crawler"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "lodash": "^3.10.1"
+  }
 }
