@@ -1,0 +1,30 @@
+{
+  "name": "gulp-dust-crawler",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "author": "Antonio Mello <acmello.ti@gmail.com>",
+  "contributors": [
+    {
+      "name": "Karl Prieb",
+      "email": "karl@prieb.me"
+    }
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/acmello/gulp-dust-crawler.git"
+  },
+  "bugs": {
+    "url": "https://github.com/acmello/gulp-dust-crawler/issues"
+  },
+  "homepage": "https://github.com/acmello/gulp-dust-crawler#readme",
+  "keywords": [
+    "dustjs",
+    "gulpplugin",
+    "crawler"
+  ],
+  "license": "MIT"
+}
