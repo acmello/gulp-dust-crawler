@@ -27,7 +27,9 @@
     "crawler"
   ],
   "license": "MIT",
-  "devDependencies": {
+  "dependencies": {
+    "dustjs-linkedin": "^2.7.2",
+    "gulp-util": "^3.0.7",
     "lodash": "^3.10.1"
   }
 }
