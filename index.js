@@ -22,6 +22,8 @@ var gulpDustCrawler = function(options) {
   var jsonData = function(folders) {
     var jsonFiles = [];
     var jsonData = [];
+    var pages = [];
+    var keys = [];
     var regex =  /^(event|schedule|home)$/;
 
     _.each(folders, function(folder) {
@@ -29,17 +31,16 @@ var gulpDustCrawler = function(options) {
       jsonFiles = jsonFiles.concat(file);
     });
 
-    var pages = [];
-
     _.each(jsonFiles, function (file) {
       var parsedJSON = JSON.parse(fs.readFileSync(file, 'utf8'));
-      var pathSplit = file.split('/')[2];
 
-      if(regex.test(pathSplit)) {
+      if(parsedJSON.code) {
         jsonFiles = _.without(jsonFiles, file);
         pages = pages.concat(file);
       }
+
       _.merge(jsonData, parsedJSON);
+
     });
 
     console.log(jsonData);
