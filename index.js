@@ -22,6 +22,7 @@ var gulpDustCrawler = function(options) {
   var jsonData = function(folders) {
     var jsonFiles = [];
     var jsonFile = [];
+    var regex =  /^(event|schedule|home)$/gi;
 
     _.each(folders, function(folder) {
       var file = glob.sync(folder + '/**/*.json');
@@ -29,16 +30,22 @@ var gulpDustCrawler = function(options) {
     });
 
     _.each(jsonFiles, function (file) {
-      _.merge(jsonFile, JSON.parse(fs.readFileSync(file, 'utf8')));
+      var parsedJSON = JSON.parse(fs.readFileSync(file, 'utf8'));
+      var pathSplit = file.split('/')[2];
+
+      if(regex.test() {
+        parsedJSON[pathSplit] = {
+
+        }
+      }
+      _.merge(jsonFile, parsedJSON);
     });
 
     console.log(jsonFile);
   };
 
   jsonData(folders);
-
 };
-
 
 gulpDustCrawler(
   {
