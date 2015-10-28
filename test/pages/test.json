@@ -1,6 +1,6 @@
 {
-  "customTitle": "template",
+  "title": "page",
   "component": {
-    "custom": "customComponent"
+    "name": "customComponent"
   }
 }

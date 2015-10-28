@@ -29,6 +29,7 @@
   "license": "MIT",
   "dependencies": {
     "dustjs-linkedin": "^2.7.2",
+    "glob": "^5.0.15",
     "gulp-util": "^3.0.7",
     "lodash": "^3.10.1"
   }
