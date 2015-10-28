@@ -2,5 +2,8 @@
   "title": "page",
   "component": {
     "name": "customComponent"
+  },
+  "ar": {
+    "test": "test"
   }
 }

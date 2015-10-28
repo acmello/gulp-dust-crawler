@@ -31,9 +31,11 @@ var gulpDustCrawler = function(options) {
     _.each(jsonFiles, function (file) {
       _.merge(jsonFile, JSON.parse(fs.readFileSync(file, 'utf8')));
     });
+
+    console.log(jsonFile);
   };
 
-  console.log(jsonData(folders));
+  jsonData(folders);
 
 };
 
