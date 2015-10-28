@@ -23,7 +23,7 @@ var gulpDustCrawler = function(options) {
     var jsonFiles = [];
     var jsonData = [];
     var pages = [];
-    var keys = [];
+    var keys = {};
     var regex =  /^(event|schedule|home)$/;
 
     _.each(folders, function(folder) {
@@ -37,14 +37,16 @@ var gulpDustCrawler = function(options) {
       if(parsedJSON.code) {
         jsonFiles = _.without(jsonFiles, file);
         pages = pages.concat(file);
+        keys[parsedJSON.code] = JSON.parse(fs.readFileSync(file, 'utf8'));;
       }
 
       _.merge(jsonData, parsedJSON);
 
     });
 
+    _.merge(jsonData, keys);
+
     console.log(jsonData);
-    console.log(pages);
   };
 
   jsonData(folders);
