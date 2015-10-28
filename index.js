@@ -22,7 +22,7 @@ var gulpDustCrawler = function(options) {
   var jsonData = function(folders) {
     var jsonFiles = [];
     var jsonData = [];
-    var regex =  /^(event|schedule|home)$/gi;
+    var regex =  /^(event|schedule|home)$/;
 
     _.each(folders, function(folder) {
       var file = glob.sync(folder + '/**/*.json');
