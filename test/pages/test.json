@@ -3,7 +3,7 @@
   "component": {
     "name": "customComponent"
   },
-  "ar": {
+  "event-ar": {
     "test": "test"
   }
 }
