@@ -1,9 +1,0 @@
-{
-  "title": "page",
-  "component": {
-    "name": "customComponent"
-  },
-  "event-ar": {
-    "test": "test"
-  }
-}
