@@ -15,9 +15,32 @@ var through = require('through2');
 var PLUGIN_NAME = 'gulp-dust-crawler';
 
 var gulpDustCrawler = function(options) {
-  return through.obj(function () {
-    gutil.log('test');
-  })
+  return through.obj(function(file, enc, cb) {
+
+    console.log(file.contents.toString(enc));
+
+        // var content = modifier(String(file.contents));
+        // file.contents = new Buffer(content);
+        // this.push(file);
+        // done();
+
+      cb(null, file);
+    });
+  // var buffer = function(buf) {
+  //   // _.forEach(buf, function (b) {
+  //   //   console.log(b);
+  //   // })
+  //   console.log(buf);
+  // }
+  //
+  // var end = function() {
+  //   console.log('----END----');
+  // }
+  //
+  //
+  // return through.obj(buffer, end);
+
+
   // var pagesPath = options.pages;
   // var templatesPath = options.templates;
   // var componentsPath = options.components;
