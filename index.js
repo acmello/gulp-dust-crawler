@@ -44,48 +44,56 @@ var gulpDustCrawler = function(options) {
 
   });
 
-  _.merge(jsonData, keys);
+  // _.merge(jsonData, keys);
 
-
-  // _.forEach(keys, function(key) {
-  //   var compiled = dust.compile(
-  //     fs.readFileSync('./src/pages/event.dust', 'utf8'), 'event');
-  //   dust.loadSource(compiled);
-  //   dust.render('event', key, function (error, output) {
-  //     if (error) {
-  //       console.log(error);
-  //     } else {
-  //       // var generatedFile = './dist/pages/' + key.code + '-event.html';
-  //       // fs.writeFileSync(generatedFile, beautifyHtml(output));
-  //       return beautifyHtml(output);
-  //     }
-  //   });
-  // });
 
   return through.obj(function(file, encode, callback) {
     try {
-      var dustTemplate = file.contents.toString(encode || 'utf8');
+      var templateCode = file.contents.toString(encode || 'utf8');
       var filePath = file.base;
       var fileNameExt = file.path.split('/').pop()
       var fileName = fileNameExt.split('.')[0];
       var that = this;
-      var tempFile = null;
-      _.forEach(keys, function(key) {
-
-        var compiled = dust.compile(dustTemplate, fileName);
+      var withGameFormat = [];
+      var withoutGameFormat = [];
+      var dustRender = function(code, templateName, data, path) {
+        var compiled = dust.compile(code, templateName);
         dust.loadSource(compiled);
-        dust.render(fileName, key, function (err, output) {
-
-          tempFile = new gutil.File({
+        dust.render(templateName, data, function(err, output) {
+          var tempFile = new gutil.File({
             base: file.base,
             cwd: file.cwd,
-            path: file.path.replace('.dust', '.html').replace(fileName, key.code + '/' + fileName)
+            path: path
           });
 
           tempFile.contents = new Buffer(beautifyHtml(output));
           that.push(tempFile);
+        })
+      };
+
+      _.forEach(keys, function(key) {
+        _.forEach(key.pageState, function(state) {
+          if(state.gameFormat) {
+            withGameFormat.push(key);
+          } else {
+            withoutGameFormat.push(key);
+          }
         });
       });
+
+      _.forEach(withGameFormat, function (pages) {
+        _.forEach(pages.pageState, function (state) {
+          _.forEach(state.gameFormat, function (format) {
+            dustRender(
+              templateCode,
+              fileName,
+              _.merge(jsonData, format),
+              file.path.replace('.dust', '.html').replace(fileName, fileName + '/' + pages.code + '-' + fileName + '-' + format.name + '-' + state.name)
+            );
+          });
+        });
+      });
+
 
       return callback();
 
