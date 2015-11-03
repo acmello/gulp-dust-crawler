@@ -19,43 +19,31 @@ var gulpDustCrawler = function(options) {
   var templatesPath = options.templates;
   var componentsPath = options.components;
 
-  var folders = [templatesPath, componentsPath, pagesPath];
+  var jsonTemplatesFiles = glob.sync(templatesPath + '/*.json');
+  var jsonTemplates = [];
+  var jsonComponentsFiles = glob.sync(componentsPath + '/**/*.json');
+  var jsonComponents = [];
+  var jsonPagesFiles = glob.sync(pagesPath + '/*.json');
 
-  var jsonFiles = [];
-  var jsonData = [];
-  var pages = [];
-  var keys = {};
-
-  _.each(folders, function(folder) {
-    var file = glob.sync(folder + '/**/*.json');
-    jsonFiles = jsonFiles.concat(file);
+  _.forEach(jsonComponentsFiles, function (component) {
+    var parsed = JSON.parse(fs.readFileSync(component, 'utf8'));
+    _.merge(jsonComponents, parsed);
   });
 
-  _.each(jsonFiles, function (file) {
-    var parsedJSON = JSON.parse(fs.readFileSync(file, 'utf8'));
-
-    if(parsedJSON.code) {
-      jsonFiles = _.without(jsonFiles, file);
-      pages = pages.concat(file);
-      keys[parsedJSON.code] = JSON.parse(fs.readFileSync(file, 'utf8'));
-    }
-
-    _.merge(jsonData, parsedJSON);
-
+  _.forEach(jsonTemplatesFiles, function (template) {
+    var parsed = JSON.parse(fs.readFileSync(template, 'utf8'));
+    _.merge(jsonTemplates, parsed);
   });
 
-  // _.merge(jsonData, keys);
+  var jsonDefault = _.extend({}, jsonTemplates, jsonComponents);
 
 
   return through.obj(function(file, encode, callback) {
     try {
       var templateCode = file.contents.toString(encode || 'utf8');
-      var filePath = file.base;
-      var fileNameExt = file.path.split('/').pop()
-      var fileName = fileNameExt.split('.')[0];
       var that = this;
-      var withGameFormat = [];
-      var withoutGameFormat = [];
+      var jsonData = null;
+
       var dustRender = function(code, templateName, data, path) {
         var compiled = dust.compile(code, templateName);
         dust.loadSource(compiled);
@@ -71,29 +59,58 @@ var gulpDustCrawler = function(options) {
         })
       };
 
-      _.forEach(keys, function(key) {
-        _.forEach(key.pageState, function(state) {
-          if(state.gameFormat) {
-            withGameFormat.push(key);
-          } else {
-            withoutGameFormat.push(key);
-          }
-        });
-      });
+      // Get pages
+      _.forEach(jsonPagesFiles, function(page) {
+        var pageName = page.split('/').pop().split('.')[0];
+        var parsed = JSON.parse(fs.readFileSync(page, 'utf8'));
+        jsonData = _.extend({}, jsonDefault, parsed);
 
-      _.forEach(withGameFormat, function (pages) {
-        _.forEach(pages.pageState, function (state) {
-          _.forEach(state.gameFormat, function (format) {
-            dustRender(
-              templateCode,
-              fileName,
-              _.merge(jsonData, format),
-              file.path.replace('.dust', '.html').replace(fileName, fileName + '/' + pages.code + '-' + fileName + '-' + format.name + '-' + state.name)
-            );
+        // Get sports
+        var jsonSportFile = glob.sync(pagesPath + '/' + pageName + '/*.json');
+        _.forEach(jsonSportFile, function(sport) {
+          var sportName = sport.split('/').pop().split('.')[0];
+          var parsed = JSON.parse(fs.readFileSync(sport, 'utf8'));
+          var sportData = _.omit(parsed, 'pageState');
+          var sportData = _.extend({}, jsonData, sportData);
+
+          // Get pageState
+          _.forEach(parsed.pageState, function(state) {
+            _.merge(sportData, {pageState: state.name});
+
+            // Get gameFormat
+            if(state.gameFormat) {
+              _.forEach(state.gameFormat, function(format) {
+                var withoutName = _.omit(format, 'name');
+                var sportWithGameData = _.extend({}, sportData, {gameFormat: format.name});
+                _.merge(sportWithGameData, withoutName);
+
+                dustRender(
+                  templateCode,
+                  pageName,
+                  sportWithGameData,
+                  file.path.replace('.dust', '.html')
+                  .replace(
+                    pageName,
+                    pageName + '/' + sportName + '-' + format.name + '--' + state.name
+                  )
+                );
+
+              })
+            } else {
+              dustRender(
+                templateCode,
+                pageName,
+                sportData,
+                file.path.replace('.dust', '.html')
+                .replace(
+                  pageName,
+                  pageName + '/' + sportName + '--' + state.name
+                )
+              );
+            }
           });
         });
       });
-
 
       return callback();
 
