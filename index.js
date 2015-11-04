@@ -24,6 +24,22 @@ var gulpDustCrawler = function(options) {
   var jsonComponentsFiles = glob.sync(componentsPath + '/**/*.json');
   var jsonComponents = [];
   var jsonPagesFiles = glob.sync(pagesPath + '/*.json');
+  var componentTemplates = glob.sync(componentsPath + '/**/*.dust');
+  var globalTemplates = glob.sync(templatesPath + '/*.dust');
+
+  _.forEach(globalTemplates, function(templatePath) {
+    var template =  fs.readFileSync(templatePath, 'utf8');
+    var templateName = templatePath.split('/').pop().split('.')[0];
+    var compiled = dust.compile(template, templateName);
+    dust.loadSource(compiled);
+  });
+
+  _.forEach(componentTemplates, function(component) {
+    var template =  fs.readFileSync(component, 'utf8');
+    var templateName = component.split('/').pop().split('.')[0];
+    var compiled = dust.compile(template, templateName);
+    dust.loadSource(compiled);
+  });
 
   _.forEach(jsonComponentsFiles, function (component) {
     var parsed = JSON.parse(fs.readFileSync(component, 'utf8'));
@@ -36,7 +52,6 @@ var gulpDustCrawler = function(options) {
   });
 
   var jsonDefault = _.extend({}, jsonTemplates, jsonComponents);
-
 
   return through.obj(function(file, encode, callback) {
     try {
