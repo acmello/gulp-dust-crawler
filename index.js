@@ -18,6 +18,18 @@ var gulpDustCrawler = function(options) {
   var pagesPath = options.pages;
   var templatesPath = options.templates;
   var componentsPath = options.components;
+  var filtersPath = options.filters;
+  // var helpersPath = options.helpers;
+
+  // register filters and helpers
+  var filtersFiles = glob.sync(filtersPath + '/*.js');
+  // var helpersFiles = glob.sync(helpersPath + '/*.js');
+  _.forEach(filtersFiles, function(filter) {
+    require(process.cwd() + '/' + filter)(dust);
+  })
+  // _.forEach(herlpersFiles, function(helper) {
+  //   require(process.cwd() + '/' + helper)(dust);
+  // })
 
   var jsonTemplatesFiles = glob.sync(templatesPath + '/*.json');
   var jsonTemplates = [];
