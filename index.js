@@ -22,7 +22,7 @@ var gulpDustCrawler = function(options) {
   var jsonTemplatesFiles = glob.sync(templatesPath + '/*.json');
   var jsonTemplates = [];
   var jsonComponentsFiles = glob.sync(componentsPath + '/**/*.json');
-  var jsonComponents = [];
+  var jsonComponents = {'components': {}};
   var jsonPagesFiles = glob.sync(pagesPath + '/*.json');
   var componentTemplates = glob.sync(componentsPath + '/**/*.dust');
   var globalTemplates = glob.sync(templatesPath + '/*.dust');
@@ -43,7 +43,8 @@ var gulpDustCrawler = function(options) {
 
   _.forEach(jsonComponentsFiles, function (component) {
     var parsed = JSON.parse(fs.readFileSync(component, 'utf8'));
-    _.merge(jsonComponents, parsed);
+    var componentName = component.split('/').pop().split('.')[0];
+    jsonComponents.components[componentName] = parsed;
   });
 
   _.forEach(jsonTemplatesFiles, function (template) {
@@ -78,7 +79,7 @@ var gulpDustCrawler = function(options) {
       _.forEach(jsonPagesFiles, function(page) {
         var pageName = page.split('/').pop().split('.')[0];
         var parsed = JSON.parse(fs.readFileSync(page, 'utf8'));
-        jsonData = _.extend({}, jsonDefault, parsed);
+        jsonData = _.merge({}, jsonDefault, parsed);
 
         // Get sports
         var jsonSportFile = glob.sync(pagesPath + '/' + pageName + '/*.json');
@@ -98,7 +99,6 @@ var gulpDustCrawler = function(options) {
                 var withoutName = _.omit(format, 'name');
                 var sportWithGameData = _.extend({}, sportData, {gameFormat: format.name});
                 _.merge(sportWithGameData, withoutName);
-
                 dustRender(
                   templateCode,
                   pageName,
