@@ -28,6 +28,7 @@
   ],
   "license": "MIT",
   "dependencies": {
+    "common-dustjs-helpers": "^0.2.1",
     "dustjs-helpers": "^1.7.3",
     "dustjs-linkedin": "^2.7.2",
     "glob": "^5.0.15",

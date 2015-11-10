@@ -4,6 +4,10 @@
 var _ = require('lodash');
 var dust = require('dustjs-linkedin');
 dust.helpers = require('dustjs-helpers').helpers;
+
+var commonhelpers = new require("common-dustjs-helpers").CommonDustjsHelpers();
+commonhelpers.export_to(dust);
+
 var gutil = require('gulp-util');
 var PluginError = gutil.PluginError;
 var fs = require('fs');
