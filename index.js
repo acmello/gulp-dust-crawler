@@ -31,10 +31,11 @@ var gulpDustCrawler = function(options) {
   var helpersFiles = glob.sync(helpersPath + '/*.js');
   _.forEach(filtersFiles, function(filter) {
     require(process.cwd() + '/' + filter)(dust);
-  })
-  _.forEach(herlpersFiles, function(helper) {
+  });
+
+  _.forEach(helpersFiles, function(helper) {
     require(process.cwd() + '/' + helper)(dust);
-  })
+  });
 
   var jsonTemplatesFiles = glob.sync(templatesPath + '/*.json');
   var jsonTemplates = [];
