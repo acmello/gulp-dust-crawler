@@ -110,6 +110,7 @@ var gulpDustCrawler = function(options) {
           // Get pageState
           _.forEach(parsed.pageState, function(state) {
             _.merge(sportData, {pageState: state.name});
+            _.merge(sportData, _.omit(state, 'name'));
 
             // Get gameFormat
             if(state.gameFormat) {
