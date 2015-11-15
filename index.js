@@ -39,10 +39,9 @@ var gulpDustCrawler = function(options) {
 
   var jsonTemplatesFiles = glob.sync(templatesPath + '/*.json');
   var jsonTemplates = [];
-  var jsonComponentsFiles = glob.sync(componentsPath + '/**/*.json');
-  var jsonComponents = {'components': {}};
   var jsonPagesFiles = glob.sync(pagesPath + '/*.json');
-  var componentTemplates = glob.sync(componentsPath + '/**/*.dust');
+
+  // load globalTemplates
   var globalTemplates = glob.sync(templatesPath + '/*.dust');
 
   _.forEach(globalTemplates, function(templatePath) {
@@ -52,6 +51,9 @@ var gulpDustCrawler = function(options) {
     dust.loadSource(compiled);
   });
 
+  // load Components templates
+  var componentTemplates = glob.sync(componentsPath + '/**/*.dust');
+
   _.forEach(componentTemplates, function(component) {
     var template =  fs.readFileSync(component, 'utf8');
     var templateName = component.split('/').pop().split('.')[0];
@@ -59,24 +61,29 @@ var gulpDustCrawler = function(options) {
     dust.loadSource(compiled);
   });
 
+  // Init components JSON
+  var jsonComponentsFiles = glob.sync(componentsPath + '/**/*.json');
+  var jsonComponents = {'components': {}};
+
   _.forEach(jsonComponentsFiles, function (component) {
     var parsed = JSON.parse(fs.readFileSync(component, 'utf8'));
     var componentName = component.split('/').pop().split('.')[0];
     jsonComponents.components[componentName] = parsed;
   });
 
+
+  // Init templates JSON
   _.forEach(jsonTemplatesFiles, function (template) {
     var parsed = JSON.parse(fs.readFileSync(template, 'utf8'));
     _.merge(jsonTemplates, parsed);
   });
 
-  var jsonDefault = _.extend({}, jsonTemplates, jsonComponents);
-
   return through.obj(function(file, encode, callback) {
     try {
       var templateCode = file.contents.toString(encode || 'utf8');
       var that = this;
-      var jsonData = null;
+      var jsonData = jsonTemplates;
+      var componentData = jsonComponents;
 
       var dustRender = function(code, templateName, data, path) {
         var compiled = dust.compile(code, templateName);
@@ -97,53 +104,188 @@ var gulpDustCrawler = function(options) {
       _.forEach(jsonPagesFiles, function(page) {
         var pageName = page.split('/').pop().split('.')[0];
         var parsed = JSON.parse(fs.readFileSync(page, 'utf8'));
-        jsonData = _.merge({}, jsonDefault, parsed);
+
+        _.merge(jsonData, _.omit(parsed, 'components'));
+
+        if (parsed.components) {
+          _.merge(componentData.components, parsed.components);
+        }
 
         // Get sports
-        var jsonSportFile = glob.sync(pagesPath + '/' + pageName + '/*.json');
-        _.forEach(jsonSportFile, function(sport) {
-          var sportName = sport.split('/').pop().split('.')[0];
-          var parsed = JSON.parse(fs.readFileSync(sport, 'utf8'));
-          var sportData = _.omit(parsed, 'pageState');
-          var sportData = _.extend({}, jsonData, sportData);
+          var jsonSportFile = glob.sync(pagesPath + '/' + pageName + '/*.json');
+          _.forEach(jsonSportFile, function(sport) {
+            var sportName = sport.split('/').pop().split('.')[0];
+            var parsed = JSON.parse(fs.readFileSync(sport, 'utf8'));
 
-          // Get pageState
-          _.forEach(parsed.pageState, function(state) {
-            _.merge(sportData, {pageState: state.name});
-            _.merge(sportData, _.omit(state, 'name'));
+            // pode haver problemas aqui - VER DEPOIS
+            var sportData = _.omit(parsed, 'pageState')
+            _.merge(jsonData, _.omit(sportData, 'components'));
 
-            // Get gameFormat
-            if(state.gameFormat) {
-              _.forEach(state.gameFormat, function(format) {
-                var withoutName = _.omit(format, 'name');
-                var sportWithGameData = _.extend({}, sportData, {gameFormat: format.name});
-                _.merge(sportWithGameData, withoutName);
-                dustRender(
-                  templateCode,
-                  pageName,
-                  sportWithGameData,
-                  file.path.replace('.dust', '.html')
-                  .replace(
+            if (parsed.components) {
+              _.merge(componentData.components, parsed.components);
+            }
+
+            // get pagestate
+            if (parsed.pageState) {
+              _.forEach(parsed.pageState, function(state) {
+                var stateData = _.omit(state, 'components');
+                var stateWithoutPhase = _.omit(stateData, 'phases')
+                _.merge(jsonData, {pageState: state.name});
+                _.merge(jsonData, _.omit(stateWithoutPhase, 'name'));
+
+                if (state.components) {
+                  _.merge(componentData.components, state.components);
+                }
+
+                // get phases
+                if (state.phases) {
+
+                  var allPhases = [];
+                  _.forEach(state.phases, function(phase) {
+                    allPhases = allPhases.concat(_.omit(phase, 'components'))
+                    if (phase.components) {
+                      _.merge(componentData.components, phase.components);
+                    }
+                  })
+
+                  jsonData.phases = allPhases;
+                }
+
+                // console.log(allPhases);
+
+
+                // console.log('================');
+                // console.log(jsonData);
+                // console.log('================');
+
+                if (state.gameFormat) {
+                  _.forEach(state.gameFormat, function (format) {
+                    _.merge(jsonData, _.omit(format, 'components'));
+                    if (format.components) {
+                      _.merge(componentData.components, format.components);
+                    }
+
+                    // get phases
+                    if (format.phases) {
+                      var allPhases = [];
+
+                      _.forEach(format.phases, function (insidePhase) {
+                        allPhases = allPhases.concat(_.omit(insidePhase, 'components'));
+
+                        if (insidePhase.components) {
+                          _.merge(componentData.components, insidePhase.components);
+                        }
+                      });
+
+                      jsonData.phases = allPhases;
+                    }
+
+                    var finalData = _.extend({}, jsonData, componentData);
+                    dustRender(
+                      templateCode,
+                      pageName,
+                      finalData,
+                      file.path.replace('.dust', '.html')
+                      .replace(
+                        pageName,
+                        pageName + '/' + sportName + '-' + format.name + '--' + state.name
+                      )
+                    );
+
+                  })
+                } else {
+                  var finalData = _.extend({}, jsonData, componentData);
+                  // console.log('=================');
+                  // console.log(finalData);
+                  // console.log('=================');
+                  dustRender(
+                    templateCode,
                     pageName,
-                    pageName + '/' + sportName + '-' + format.name + '--' + state.name
-                  )
-                );
-
+                    finalData,
+                    file.path.replace('.dust', '.html')
+                    .replace(
+                      pageName,
+                      pageName + '/' + sportName + '--' + state.name
+                    )
+                  );
+                }
               })
-            } else {
-              dustRender(
-                templateCode,
-                pageName,
-                sportData,
-                file.path.replace('.dust', '.html')
-                .replace(
-                  pageName,
-                  pageName + '/' + sportName + '--' + state.name
-                )
-              );
             }
           });
-        });
+
+        // Get sports
+        // var jsonSportFile = glob.sync(pagesPath + '/' + pageName + '/*.json');
+        // _.forEach(jsonSportFile, function(sport) {
+          // var sportName = sport.split('/').pop().split('.')[0];
+          // var parsed = JSON.parse(fs.readFileSync(sport, 'utf8'));
+        //   var sportData = _.omit(parsed, 'pageState');
+        //   var sportData = _.extend({}, jsonData, sportData);
+        //
+        //   if (parsed.components) {
+        //     jsonComponents.components = _.merge({}, jsonComponents.components, parsed.components);
+        //   }
+
+          // Get pageState
+      //     _.forEach(parsed.pageState, function(state) {
+      //       _.merge(sportData, {pageState: state.name});
+      //       _.merge(sportData, _.omit(state, 'name'));
+      //       //
+      //
+      //       if (state.phases) {
+      //         _.forEach(state.phases, function(phase) {
+      //           if (phase.components) {
+      //             jsonComponents.components = _.merge({}, jsonComponents.components, phase.components);
+      //           }
+      //         })
+      //       }
+      //
+      //
+      //
+      //       // Get gameFormat
+      //       if(state.gameFormat) {
+      //         _.forEach(state.gameFormat, function(format) {
+      //
+      //           if (format.phases) {
+      //             _.forEach(format.phases, function(phase) {
+      //               if (phase.components) {
+      //                 jsonComponents.components = _.merge({}, jsonComponents.components, phase.components);
+      //               }
+      //             })
+      //           }
+      //
+      //           console.log(jsonComponents.components['event-inline-schedule']);
+      //
+      //           var withoutName = _.omit(format, 'name');
+      //           var sportWithGameData = _.extend({}, sportData, {gameFormat: format.name});
+      //           _.merge(sportWithGameData, withoutName);
+      //           var finalData = _.merge({}, sportWithGameData, jsonComponents);
+      //           dustRender(
+      //             templateCode,
+      //             pageName,
+      //             finalData,
+      //             file.path.replace('.dust', '.html')
+      //             .replace(
+      //               pageName,
+      //               pageName + '/' + sportName + '-' + format.name + '--' + state.name
+      //             )
+      //           );
+      //
+      //         })
+      //       } else {
+      //         var finalData = _.merge({}, sportData, jsonComponents);
+      //         dustRender(
+      //           templateCode,
+      //           pageName,
+      //           finalData,
+      //           file.path.replace('.dust', '.html')
+      //           .replace(
+      //             pageName,
+      //             pageName + '/' + sportName + '--' + state.name
+      //           )
+      //         );
+      //       }
+      //     });
+        // });
       });
 
       return callback();
