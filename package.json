@@ -1,6 +1,6 @@
 {
   "name": "gulp-dust-crawler",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "",
   "main": "index.js",
   "author": "Antonio Mello <acmello.ti@gmail.com>",
