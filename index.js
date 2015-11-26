@@ -38,7 +38,7 @@ var gulpDustCrawler = function(options) {
   });
 
   var jsonTemplatesFiles = glob.sync(templatesPath + '/*.json');
-  var jsonTemplates = [];
+  var jsonTemplates = {};
   var jsonPagesFiles = glob.sync(pagesPath + '/*.json');
 
   // load globalTemplates
@@ -82,7 +82,7 @@ var gulpDustCrawler = function(options) {
       var templateCode = file.contents.toString(encode || 'utf8');
       var that = this;
       var jsonData = jsonTemplates;
-      var componentData = jsonComponents;
+      var componentData = JSON.parse(JSON.stringify(jsonComponents));
 
       var dustRender = function(code, templateName, data, path) {
         var compiled = dust.compile(code, templateName);
@@ -106,9 +106,13 @@ var gulpDustCrawler = function(options) {
 
         _.merge(jsonData, _.omit(parsed, 'components'));
 
-        if (parsed.components) {
-          _.merge(componentData.components, parsed.components);
+        var pageComponents = {};
+        if(parsed.components){
+           pageComponents = parsed.components;
         }
+        /*if (parsed.components) {
+          _.merge(componentData.components, parsed.components);
+        }*/
 
         // Get sports
         var jsonSportFile = glob.sync(pagesPath + '/' + pageName + '/*.json');
@@ -120,9 +124,13 @@ var gulpDustCrawler = function(options) {
           var sportData = _.omit(parsed, 'pageState');
           _.merge(jsonData, _.omit(sportData, 'components'));
 
-          if (parsed.components) {
-            _.merge(componentData.components, parsed.components);
+          var sportComponents = {};
+          if (parsed.components){
+            sportComponents = parsed.components;
           }
+          /*if (parsed.components) {
+            _.merge(componentData.components, parsed.components);
+          }*/
 
           // get pagestate
           if (parsed.pageState) {
@@ -132,9 +140,13 @@ var gulpDustCrawler = function(options) {
               _.merge(jsonData, {pageState: state.name});
               _.merge(jsonData, _.omit(stateWithoutPhase, 'name'));
 
-              if (state.components) {
-                _.merge(componentData.components, state.components);
+              var stateComponents = {};
+              if (state.components){
+                  stateComponents = state.components;
               }
+              /*if (state.components) {
+                _.merge(sportComponents, pageComponents, state.components);
+              }*/
 
               // get phases
               if (state.phases) {
@@ -150,9 +162,13 @@ var gulpDustCrawler = function(options) {
               if (state.gameFormat) {
                 _.forEach(state.gameFormat, function(format) {
                   _.merge(jsonData, _.omit(format, 'components'));
-                  if (format.components) {
-                    _.merge(componentData.components, format.components);
+                  var formatComponents = {};
+                  if (format.components){
+                      formatComponents= format.components;
                   }
+                  /*if (format.components) {
+                    _.merge(componentData.components, format.components);
+                  }*/
 
                   // get phases
                   if (format.phases) {
@@ -166,7 +182,10 @@ var gulpDustCrawler = function(options) {
                     jsonData.phases = allPhases;
                   }
 
-                  var finalData = _.extend({}, jsonData, componentData);
+                  var mergedComponentData = componentData;
+                  _.merge(mergedComponentData.components, pageComponents, sportComponents, stateComponents, formatComponents);
+
+                  var finalData = _.extend({}, jsonData, mergedComponentData);
                   dustRender(
                     templateCode,
                     pageName,
@@ -180,7 +199,12 @@ var gulpDustCrawler = function(options) {
                   );
                 });
               } else {
-                var finalData = _.extend({}, jsonData, componentData);
+
+                var mergedComponentData = componentData;
+
+                _.merge(mergedComponentData.components, pageComponents, sportComponents, stateComponents);
+
+                var finalData = _.extend({}, jsonData, mergedComponentData);
                 dustRender(
                   templateCode,
                   pageName,
